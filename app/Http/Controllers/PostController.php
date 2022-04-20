@@ -3,19 +3,18 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Post;
+use App\Models\User;
 
 class PostController extends Controller
 {
     //
     public function index()
     {
-        $posts = [
-            ['id' => 1, 'title' => 'Laravel', 'post_creator' => 'Ahmed', 'created_at' => '2022-04-16 10:37:00'],
-            ['id' => 2, 'title' => 'PHP', 'post_creator' => 'Mohamed', 'created_at' => '2022-04-16 10:37:00'],
-            ['id' => 3, 'title' => 'Javascript', 'post_creator' => 'Ali', 'created_at' => '2022-04-16 10:37:00'],
-        ];
+
+        // $posts=Post::all();
+        $posts=Post::paginate(5);
         
-        // dd($posts); for debugging
         return view('posts.index',[
             'posts' => $posts,
         ]);
@@ -23,33 +22,51 @@ class PostController extends Controller
 
     public function create()
     {
-        return view('posts.create');
-    }
+        $users=User::all();
+
+       return view('posts.create',[
+           'users' => $users
+        ]); 
+     }
 
     public function store()
-    {
-        return 'we are in store';
+    {   
+        // $data=$_POST;
+        $data=request()->all();
+        Post::create([
+            'title'=> $data['title'],
+            'description' => $data['description'],
+            'user_id' => $data['post_creator'],
+        ]);
+        return redirect()->route('posts.index');
+       
     }
+
     public function show($postId)
     {
-        // return $postId;
-        $posts = [
-            ['id' => 1, 'title' => 'Laravel', 'post_creator' => 'Ahmed', 'created_at' => '2022-04-16 10:37:00'],
-            ['id' => 2, 'title' => 'PHP', 'post_creator' => 'Mohamed', 'created_at' => '2022-04-16 10:37:00'],
-            ['id' => 3, 'title' => 'Javascript', 'post_creator' => 'Ali', 'created_at' => '2022-04-16 10:37:00'],
-        ];
-        return view('posts.show', ['posts' => $posts[$postId-1]]);
+        $posts=Post::find($postId);
+        // dd($posts);
+        return view('posts.show', ['posts' => $posts]);
     }
-    public function edit($postId){
-        $posts = [
-            ['id' => 1, 'title' => 'Laravel', 'post_creator' => 'Ahmed', 'created_at' => '2022-04-16 10:37:00'],
-            ['id' => 2, 'title' => 'PHP', 'post_creator' => 'Mohamed', 'created_at' => '2022-04-16 10:37:00'],
-            ['id' => 3, 'title' => 'Javascript', 'post_creator' => 'Ali', 'created_at' => '2022-04-16 10:37:00'],
-        ];
-        return view('posts.edit', ['posts' => $posts[$postId-1]]);
 
+    public function edit($postId)
+    {
+        $posts=Post::find($postId);
+        $users=User::all();
+        return view('posts.edit', ['posts' => $posts , 'users' => $users]);
+    }
 
+    public function update(Request $request, $postId)
+    {   
+        Post::where('id',$postId)->update($request->except(['_token','_method']));
+        
+        return redirect()->route('posts.index');
 
+    }
+
+    public function destroy($postId){
+        Post::where('id', $postId)->delete();
+        return redirect()->route('posts.index')->with('danger', "post No.$postId deleted!");
 
     }
 }
