@@ -12,7 +12,9 @@ class Post extends Model
     protected $fillable= [
         'title',
         'description',
-        'user_id'
+        'user_id',
+        'slug',
+        'image',
     ];
 
     public function user(){
@@ -22,5 +24,14 @@ class Post extends Model
     public function comments()
     {
         return $this->morphMany(Comment::class, 'commentable');
+    }
+
+    public function sluggable(): array
+    {
+        return [
+            'slug' => [
+                'source' => 'title'
+            ]
+        ];
     }
 }

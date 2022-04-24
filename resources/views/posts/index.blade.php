@@ -17,6 +17,8 @@ use Carbon\Carbon;
                 <th scope="col">Posted By</th>
                 <th scope="col">Created At</th>
                 <th scope="col">Actions</th>
+                <th scope="col">Slug</th>
+                <th scope="col">image</th>
               </tr>
             </thead>
             <tbody>
@@ -42,6 +44,8 @@ use Carbon\Carbon;
                       <button type="submit" class="btn btn-danger" onclick="return confirm('Sure Want Delete?')">Delete</button>
                     </form> 
                 </td>
+                <td>{{ $post->slug }}</td>
+                <td><img src="{{ asset('storage/images/'.$post->image) }}" style="width:50px;height:50px;"/></td>
               </tr>
               @endforeach
 

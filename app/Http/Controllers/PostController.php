@@ -5,6 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\User;
+use App\Http\Requests\StorePostRequest;
+use App\Http\Requests\UpdatePostRequest;
+use Illuminate\Support\Str;
+use App\Jobs\ProcessPodcast;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+
 
 class PostController extends Controller
 {
@@ -14,6 +21,7 @@ class PostController extends Controller
 
         // $posts=Post::all();
         $posts=Post::paginate(5);
+        ProcessPodcast::dispatch();
         
         return view('posts.index',[
             'posts' => $posts,
@@ -29,15 +37,22 @@ class PostController extends Controller
         ]); 
      }
 
-    public function store()
+    public function store(StorePostRequest $request)
     {   
-        // $data=$_POST;
-        $data=request()->all();
-        Post::create([
-            'title'=> $data['title'],
-            'description' => $data['description'],
-            'user_id' => $data['post_creator'],
-        ]);
+        if ($request->hasFile('fileUpload')) {
+            $image=$request->file('fileUpload');
+            $name = $image->getClientOriginalName();
+            $imagePath = $request->file('fileUpload')->storeAs('public/images/',$name);
+            Post::create([
+                'title' =>  $request['title'],
+                'description' =>  $request['description'],
+                'user_id' => $request['user_id'],
+                'slug' =>Str::slug($request->input('title'),'-'),
+                'image'=>$name,
+            ]);
+        }
+        
+
         return redirect()->route('posts.index');
        
     }
@@ -56,9 +71,32 @@ class PostController extends Controller
         return view('posts.edit', ['posts' => $posts , 'users' => $users]);
     }
 
-    public function update(Request $request, $postId)
-    {   
-        Post::where('id',$postId)->update($request->except(['_token','_method']));
+    public function update(UpdatePostRequest $request ,$postId)
+
+    { 
+        $post=Post::find($postId);
+        $name = $post->image;
+        // dd($name);
+
+        if ($request->hasFile('fileUpload')) {
+
+            if ($name != null) {
+                File::delete(public_path( Storage::url($post->image)));
+                
+            }
+            $image=$request->file('fileUpload');
+            $name = $image->getClientOriginalName();
+            $imagePath = $request->file('fileUpload')->storeAs('public/images/',$name);
+        }
+
+        Post::where('id',$postId)->update([
+            'title' =>  $request['title'],
+            'description' =>  $request['description'],
+            'user_id' => $request['user_id'],
+            'slug' =>Str::slug($request->input('title'),'-'),
+            'image'=>$name,
+        
+        ]);
         
         return redirect()->route('posts.index');
 
